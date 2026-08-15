@@ -725,8 +725,8 @@ def select_smart_apify_actor(url: str, default_actor: Optional[str] = None) -> T
         logger.info("🧠 [SMART APIFY ROUTER] Detected Instagram URL -> selecting apify/instagram-scraper")
         return "apify/instagram-scraper", {"directUrls": [url], "resultsLimit": 1}
     elif "youtube.com" in low_url or "youtu.be" in low_url:
-        logger.info("🧠 [SMART APIFY ROUTER] Detected YouTube URL -> selecting streamings/youtube-scraper")
-        return "streamings/youtube-scraper", {"startUrls": [{"url": url}], "maxResults": 1}
+        logger.info("🧠 [SMART APIFY ROUTER] Detected YouTube URL -> selecting clockworks/free-youtube-downloader")
+        return "clockworks/free-youtube-downloader", {"startUrls": [{"url": url}], "downloadVideo": True}
     elif "tiktok.com" in low_url:
         logger.info("🧠 [SMART APIFY ROUTER] Detected TikTok URL -> selecting apify/tiktok-scraper")
         return "apify/tiktok-scraper", {"postURLs": [url], "resultsPerPage": 1}
