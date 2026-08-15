@@ -121,18 +121,54 @@ class TelegramVaultIndexer:
             logger.warning("⚠️ Vault hydration download failed for %s: %s", os.path.basename(dest_path), _dl_err)
         return False
 
+    def sync_pinned_index_from_telegram_sync(self) -> bool:
+        """
+        Synchronously fetches TELEGRAM_STORAGE_GROUP_ID for pinned master_vault_index.json,
+        downloads it, and updates local vault_index.
+        """
+        storage_group_id = os.getenv("TELEGRAM_STORAGE_GROUP_ID") or os.getenv("TELEGRAM_CHAT_ID")
+        bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+        if not storage_group_id or not bot_token:
+            return False
+
+        try:
+            import urllib.request
+            import json as _json
+            url = f"https://api.telegram.org/bot{bot_token}/getChat?chat_id={storage_group_id}"
+            req = urllib.request.Request(url)
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = _json.loads(resp.read().decode("utf-8"))
+            
+            if data.get("ok"):
+                pinned = data.get("result", {}).get("pinned_message", {})
+                doc = pinned.get("document", {})
+                if doc.get("file_name") in ["telegram_media_index.json", "master_vault_index.json"] and doc.get("file_id"):
+                    file_id = doc["file_id"]
+                    if self.download_vault_file_by_id(file_id, self.index_file):
+                        self.vault_index = self._load_local_index()
+                        logger.info("📌 [VAULT SYNC SUCCESS] Downloaded and reloaded pinned master_vault_index.json from Telegram Storage Group!")
+                        return True
+        except Exception as err:
+            logger.warning("⚠️ Sync pinned master index notice: %s", err)
+        return False
+
     def hydrate_all_vault_jsons_on_startup(self) -> Dict[str, bool]:
         """
-        Downloads latest telegram_users.json and metadata_pool.json from Telegram Storage Group
-        using vault_index file_ids to restore state on startup or cloud sync.
+        1. Downloads pinned master_vault_index.json from Telegram Storage Group.
+        2. Downloads latest telegram_users.json and metadata_pool.json using file_ids in index.
         """
-        results = {"telegram_users": False, "metadata_pool": False}
+        results = {"pinned_index": False, "telegram_users": False, "metadata_pool": False}
         try:
+            # Step 1: Download pinned index from Telegram Storage Group first!
+            results["pinned_index"] = self.sync_pinned_index_from_telegram_sync()
+
+            # Step 2: Download telegram_users.json
             users_file_id = self.vault_index.get("telegram_users_file_id")
             if users_file_id:
                 from Phase_1.Telegram_Storage_Manager.telegram_user_manager import USERS_JSON_PATH
                 results["telegram_users"] = self.download_vault_file_by_id(users_file_id, USERS_JSON_PATH)
 
+            # Step 3: Download metadata_pool.json
             pool_file_id = self.vault_index.get("metadata_pool_file_id")
             if pool_file_id:
                 from Phase_1.Audio_Modules import AudioPoolManager

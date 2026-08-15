@@ -38,16 +38,42 @@ def load_all_users() -> Dict[str, Dict]:
         return {}
 
 
-def save_all_users(users: Dict[str, Dict], upload_fn=None) -> bool:
-    """Saves user records dictionary to telegram_users.json and optionally syncs to Storage Group."""
+def sync_users_json_to_telegram_vault(upload_fn=None):
+    """Uploads updated telegram_users.json to Storage Group & updates pinned master_vault_index.json."""
+    try:
+        if not upload_fn:
+            try:
+                from Phase_1.Downloader_Modules.telegram_listener import _send_file_multipart
+                upload_fn = _send_file_multipart
+            except Exception:
+                upload_fn = None
+
+        from Phase_1.Telegram_Storage_Manager.telegram_vault_indexer import TelegramVaultIndexer
+        storage_group_id = os.getenv("TELEGRAM_STORAGE_GROUP_ID") or os.getenv("TELEGRAM_CHAT_ID")
+        if storage_group_id and upload_fn and os.path.exists(USERS_JSON_PATH):
+            res = upload_fn("sendDocument", storage_group_id, "document", USERS_JSON_PATH, caption=f"👤 **[VAULT BACKUP]** `telegram_users.json` (Updated {time.strftime('%H:%M:%S')})")
+            if res and isinstance(res, dict):
+                users_doc_id = res.get("document", {}).get("file_id")
+                if users_doc_id:
+                    indexer = TelegramVaultIndexer()
+                    indexer.vault_index["telegram_users_file_id"] = users_doc_id
+                    indexer._save_local_index()
+                    indexer.upload_and_pin_vault_index_sync(upload_fn)
+                    logger.info("✅ [USER VAULT BACKUP] Uploaded & PINNED updated telegram_users.json to Storage Group (file_id: %s)", users_doc_id[:15])
+    except Exception as err:
+        logger.warning("Notice uploading telegram_users.json to vault: %s", err)
+
+
+def save_all_users(users: Dict[str, Dict], upload_fn=None, sync_to_vault: bool = True) -> bool:
+    """Saves user records dictionary to telegram_users.json and syncs to Telegram Storage Group."""
     try:
         os.makedirs(JSONS_DIR, exist_ok=True)
         with open(USERS_JSON_PATH, "w", encoding="utf-8") as f:
             json.dump(users, f, indent=2, ensure_ascii=False)
+        
+        if sync_to_vault:
+            sync_users_json_to_telegram_vault(upload_fn=upload_fn)
         return True
-    except Exception as err:
-        logger.error("Failed to save %s: %s", USERS_JSON_PATH, err)
-        return False
     except Exception as err:
         logger.error("Failed to save %s: %s", USERS_JSON_PATH, err)
         return False
