@@ -379,6 +379,11 @@ def handle_user_callback(cb: Dict, send_msg_fn, answer_cb_fn):
     if cb_id and answer_cb_fn:
         answer_cb_fn(cb_id)
 
+    storage_group_id = os.getenv("TELEGRAM_STORAGE_GROUP_ID", "").strip()
+    chat_type = msg.get("chat", {}).get("type", "")
+    if (storage_group_id and chat_id == storage_group_id) or chat_type in ["group", "supergroup", "channel"]:
+        return
+
     user_record = get_or_register_user(from_user, chat_id)
     user_id_str = str(from_user.get("id") or chat_id)
     nickname = user_record.get("nickname", "").strip()
@@ -464,6 +469,11 @@ def handle_user_message(msg: Dict, send_msg_fn, admin_chat_id: Optional[str] = N
     text = (msg.get("text") or msg.get("caption") or "").strip()
 
     if not chat_id:
+        return False, None
+
+    storage_group_id = os.getenv("TELEGRAM_STORAGE_GROUP_ID", "").strip()
+    chat_type = chat.get("type", "")
+    if (storage_group_id and chat_id == storage_group_id) or chat_type in ["group", "supergroup", "channel"]:
         return False, None
 
     user_record = get_or_register_user(from_user, chat_id, admin_chat_id=admin_chat_id)
