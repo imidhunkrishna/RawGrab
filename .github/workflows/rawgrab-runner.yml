@@ -80,7 +80,7 @@ jobs:
     - name: Set up FFmpeg
       run: |
         sudo apt-get update -qq
-        sudo apt-get install -y ffmpeg ffprobe
+        sudo apt-get install -y ffmpeg
 
     # ── 4. Python Dependencies ────────────────────────────────────────────────
     - name: Install Python Dependencies
