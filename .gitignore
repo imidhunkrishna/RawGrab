@@ -1,0 +1,56 @@
+# ── Ignore Everything Outside Phase_1 ────────────────────────────────────────
+/*
+
+# ── Allow Essential Root Files & Phase_1 ────────────────────────────────────
+!/.gitignore
+!/README.md
+!/Phase_1/
+!/Phase_1/**
+
+# ── Ignore Secrets & Environments ───────────────────────────────────────────
+.env
+.env.*
+*.env
+*.pem
+*.key
+Phase_1/**/*.env
+Phase_1/**/*.env.*
+
+# ── Ignore Python & Virtual Environments ────────────────────────────────────
+venv/
+.venv/
+Phase_1/**/venv/
+Phase_1/**/.venv/
+Phase_1/**/__pycache__/
+Phase_1/**/*.py[cod]
+
+# ── Ignore Downloads & Media Cache ──────────────────────────────────────────
+quarantine/
+downloads/
+scratch/
+Phase_1/**/quarantine/
+Phase_1/**/downloads/
+Phase_1/**/scratch/
+Phase_1/**/Original_audio/active/
+Phase_1/**/Original_audio/beats/
+
+# ── Ignore Serverless Vault JSON Databases (Cloud Storage Group holds state) ─
+Phase_1/The jsons/Telegram_Storage_Manager_json/telegram_users.json
+Phase_1/The jsons/Telegram_Storage_Manager_json/telegram_media_index.json
+Phase_1/The jsons/Audio_Modules_json/metadata_pool.json
+Phase_1/Telegram_Storage_Manager/telegram_users.json
+Phase_1/Telegram_Storage_Manager/telegram_media_index.json
+Phase_1/Telegram_Storage_Manager/master_vault_index.json
+Phase_1/Audio_Modules/metadata_pool.json
+
+# ── Ignore Logs & Databases ────────────────────────────────────────────────
+logs/
+*.log
+graphify-out/
+*.db
+*.sqlite
+ruvector.db
+memory_log.jsonl
+Phase_1/**/*.log
+Phase_1/**/*.db
+Phase_1/**/*.sqlite

@@ -1,0 +1,107 @@
+{
+  "Db_ADTnsLuu": {
+    "id": "Db_ADTnsLuu",
+    "file": "C:\\Users\\midhunkrishnapv\\OneDrive\\Desktop\\CBM\\quarantine\\vid_1786789314524\\Video_by_ruhisingh12.mp4",
+    "duration": 21.5,
+    "resolution": "720x1280",
+    "frame_hashes": [
+      "ae7f7f3efbeffe7e",
+      "aa7f7fbefbeffffc",
+      "1afeefffbeffffbe",
+      "1a7efffffefffffe",
+      "5ba88e7ef7767eae",
+      "b3c86e36d6cb37be",
+      "c101100100010000",
+      "32df66cf3efedefe",
+      "fa004cd1a01060a2",
+      "8181800140814000",
+      "2101410080800000",
+      "1540020305050110"
+    ],
+    "embedding": []
+  },
+  "Db-fh0cDA0R": {
+    "id": "Db-fh0cDA0R",
+    "file": "C:\\Users\\midhunkrishnapv\\OneDrive\\Desktop\\CBM\\quarantine\\vid_1786789394641\\Video_by_papsdesk.mp4",
+    "duration": 15.0,
+    "resolution": "720x1280",
+    "frame_hashes": [
+      "d340012001010000",
+      "d340012801010000",
+      "d1c1012021000000",
+      "4141012001000000",
+      "befefeffffeefefe",
+      "332d4e3349604210",
+      "07fffffafffefffe",
+      "96df6f2cb7dffefe",
+      "2d6426b2b267ffae",
+      "e90820a406404990",
+      "e10c2ce404451bf2",
+      "fd0024a602410098"
+    ],
+    "embedding": []
+  },
+  "DcBNnW5RO3j": {
+    "id": "DcBNnW5RO3j",
+    "file": "C:\\Users\\midhunkrishnapv\\OneDrive\\Desktop\\CBM\\quarantine\\vid_1786791247213\\Video_by_janakimaya.mp4",
+    "duration": 26.566666666666666,
+    "resolution": "720x1280",
+    "frame_hashes": [
+      "75febb5dffff2bfc",
+      "75febb5dfdb70bfc",
+      "75fe9b7dffff2bfe",
+      "7dfe9b7dffff2bfc",
+      "75fe9b7dffff0bfc",
+      "fdfe9b5dffff0bfc",
+      "f5febb5dffbf0bfc",
+      "f5fe9b7dfff72bfc",
+      "fdfebf5dfdff0bfc",
+      "fdfeba5dfdbf0afc",
+      "a7fefdffa7fefdfe",
+      "a7fefdffa7fefdfe"
+    ],
+    "embedding": []
+  },
+  "Dbk9KUZTYes": {
+    "id": "Dbk9KUZTYes",
+    "file": "C:\\Users\\midhunkrishnapv\\OneDrive\\Desktop\\CBM\\quarantine\\vid_1786791380385\\Video_by_the_shaikh_8770.mp4",
+    "duration": 9.333333333333334,
+    "resolution": "720x1280",
+    "frame_hashes": [
+      "757edeffbefffffe",
+      "333f545efefefefe",
+      "377f765efefef6fe",
+      "373f7e5efef6fefe",
+      "37befefefefefefe",
+      "b7ee7efefefefffc",
+      "7f1e46f7ecf87a72",
+      "5950012100a11100",
+      "555cd6f7f6fffffe",
+      "777e9efefefffffe",
+      "577efeffbeffff7e",
+      "77787edededefffe"
+    ],
+    "embedding": []
+  },
+  "DcDklqCMIlI": {
+    "id": "DcDklqCMIlI",
+    "file": "C:\\Users\\midhunkrishnapv\\OneDrive\\Desktop\\CBM\\quarantine\\vid_1786796623684\\Video_by_ruhisingh12.mp4",
+    "duration": 19.64,
+    "resolution": "720x1280",
+    "frame_hashes": [
+      "a18227079120d100",
+      "83823d1181209308",
+      "a38235158100c308",
+      "baf6effffffaffbe",
+      "e3822505209180c0",
+      "782bb4fb2de06d24",
+      "4901010000000000",
+      "d101410001000000",
+      "d180012920c10000",
+      "7892a75f3e3ea860",
+      "a180030101104180",
+      "e1c0040000301100"
+    ],
+    "embedding": []
+  }
+}

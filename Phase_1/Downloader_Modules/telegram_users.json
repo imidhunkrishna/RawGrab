@@ -1,0 +1,29 @@
+{
+  "7822881619": {
+    "chat_id": "7822881619",
+    "user_id": 7822881619,
+    "first_name": "Me",
+    "username": "Morphine_for_paradise",
+    "nickname": "me",
+    "role": "user",
+    "password_hash": "8bf729f5f3e2ba07cb421f6046e008ef4958665133b14fded2c7271c4664525f",
+    "recovery_otp": "",
+    "authenticated": true,
+    "joined_at": "2026-08-15T09:56:45.001990",
+    "last_active": "2026-08-15T15:53:08.333787",
+    "recovery_otp_expires": ""
+  },
+  "1363193987": {
+    "chat_id": "1363193987",
+    "user_id": 1363193987,
+    "first_name": "Midhun",
+    "username": "midhun6771",
+    "nickname": "",
+    "role": "admin",
+    "password_hash": "",
+    "recovery_otp": "",
+    "authenticated": true,
+    "joined_at": "2026-08-15T15:55:19.725123",
+    "last_active": "2026-08-15T15:58:30.000000"
+  }
+}
