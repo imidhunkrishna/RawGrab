@@ -1,0 +1,220 @@
+name: RawGrab Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Execution mode (auto = 6h daemon scheduler, manual = targeted run)'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - manual
+      platform:
+        description: 'Target platform to scrape'
+        required: false
+        default: 'all_available'
+        type: choice
+        options:
+          - all_available
+          - instagram
+          - youtube
+          - tiktok
+      target_accounts:
+        description: 'Target creator handle(s) (comma-separated, e.g. indiancelebspot)'
+        required: false
+        default: ''
+        type: string
+      target_url:
+        description: 'Source video URL to process (YouTube, TikTok, Instagram, direct link)'
+        required: false
+        default: ''
+        type: string
+
+  schedule:
+    # 4 clean 6-hour windows aligned with Indian peak human attention (UTC crons):
+    - cron: '30 1 * * *'   # 07:00 AM IST — 1hr before 8 AM morning peak window
+    - cron: '30 7 * * *'   # 01:00 PM IST — 1hr before 2 PM lunch peak window
+    - cron: '30 13 * * *'  # 07:00 PM IST — 1hr before 8 PM prime evening surge
+    - cron: '30 19 * * *'  # 01:00 AM IST — 1hr before 2 AM late night attention window
+
+# ── Concurrency Control ──────────────────────────────────────────────────────
+# All runs share a single concurrency group.
+# cancel-in-progress: false — A running 6-hour session will NEVER be killed
+# by a new scheduled cron or manual dispatch. GitHub queues them safely.
+concurrency:
+  group: rawgrab-bot
+  cancel-in-progress: false
+
+jobs:
+  run-rawgrab:
+    runs-on: ubuntu-latest
+    env:
+      TZ: "Asia/Kolkata"
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      GITHUB_CRON: ${{ github.event.schedule }}
+      DISPATCH_MODE: ${{ github.event.inputs.mode || 'both' }}
+    timeout-minutes: 360   # 6-hour hard ceiling — GitHub kills gracefully after this
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+
+    # ── 1. Checkout ───────────────────────────────────────────────────────────
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    # ── 2. Python ─────────────────────────────────────────────────────────────
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+
+    # ── 3. System Dependencies (Fast Static FFmpeg Setup) ─────────────────────
+    - name: Set up FFmpeg
+      run: |
+        mkdir -p $HOME/.local/bin
+        curl -sL https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz | tar -xJ -C $HOME/.local/bin --wildcards '*/ffmpeg' '*/ffprobe' --strip-components=1
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    # ── 4. Python Dependencies ────────────────────────────────────────────────
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install --prefer-binary -r requirements.txt
+
+    # ── 5. Credential Injection ───────────────────────────────────────────────
+    - name: Setup Environment Variables & Tokens
+      env:
+        ENV_FILE_CONTENT: ${{ secrets.ENV || secrets.ENV_FILE_CONTENT }}
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        TELEGRAM_PUBLIC_GROUP_ID: ${{ secrets.TELEGRAM_PUBLIC_GROUP_ID }}
+        TELEGRAM_STORAGE_GROUP_ID: ${{ secrets.TELEGRAM_STORAGE_GROUP_ID }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
+        META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+        META_PAGE_TOKEN: ${{ secrets.META_PAGE_TOKEN }}
+        IG_BUSINESS_ID: ${{ secrets.IG_BUSINESS_ID }}
+        IG_BUSINESS_TOKEN: ${{ secrets.IG_BUSINESS_TOKEN }}
+        TELEGRAM_CONFIG_JSON: ${{ secrets.TELEGRAM_CONFIG_JSON }}
+        CLIENT_SECRET_JSON: ${{ secrets.CLIENT_SECRET_JSON }}
+        TOKEN_JSON: ${{ secrets.TOKEN_JSON }}
+      run: |
+        mkdir -p Credentials
+        rm -f .env Credentials/.env
+
+        # Write base .env content
+        if [ -n "$ENV_FILE_CONTENT" ]; then
+          echo "$ENV_FILE_CONTENT" > .env
+        fi
+
+        # Write explicit individual secrets into root .env
+        [ -n "$TELEGRAM_BOT_TOKEN" ] && echo "TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN" >> .env
+        [ -n "$TELEGRAM_CHAT_ID" ] && echo "TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID" >> .env
+        [ -n "$TELEGRAM_PUBLIC_GROUP_ID" ] && echo "TELEGRAM_PUBLIC_GROUP_ID=$TELEGRAM_PUBLIC_GROUP_ID" >> .env
+        [ -n "$TELEGRAM_STORAGE_GROUP_ID" ] && echo "TELEGRAM_STORAGE_GROUP_ID=$TELEGRAM_STORAGE_GROUP_ID" >> .env
+        [ -n "$GEMINI_API_KEY" ] && echo "GEMINI_API_KEY=$GEMINI_API_KEY" >> .env
+        [ -n "$APIFY_API_TOKEN" ] && echo "APIFY_API_TOKEN=$APIFY_API_TOKEN" >> .env
+        [ -n "$META_PAGE_ID" ] && echo "META_PAGE_ID=$META_PAGE_ID" >> .env
+        [ -n "$META_PAGE_TOKEN" ] && echo "META_PAGE_TOKEN=$META_PAGE_TOKEN" >> .env
+        [ -n "$IG_BUSINESS_ID" ] && echo "IG_BUSINESS_ID=$IG_BUSINESS_ID" >> .env
+        [ -n "$IG_BUSINESS_ID" ] && echo "IG_BUSINESS_ACCOUNT_ID=$IG_BUSINESS_ID" >> .env
+        [ -n "$IG_BUSINESS_TOKEN" ] && echo "IG_BUSINESS_TOKEN=$IG_BUSINESS_TOKEN" >> .env
+        echo "CLIENT_SECRET_FILE=Credentials/youtube/client_secret.json" >> .env
+        echo "YOUTUBE_TOKEN_FILE=Credentials/youtube/token.json" >> .env
+        echo "AUTO_PUBLISH_CLIPS=yes" >> .env
+
+        # Sync to Credentials/.env
+        cp .env Credentials/.env
+
+        # Telegram config
+        if [ -n "$TELEGRAM_CONFIG_JSON" ]; then
+          echo "$TELEGRAM_CONFIG_JSON" > Credentials/telegram_config.json
+        fi
+
+        # YouTube OAuth files
+        mkdir -p Credentials/youtube
+        if [ -n "$CLIENT_SECRET_JSON" ]; then
+          echo "$CLIENT_SECRET_JSON" > Credentials/youtube/client_secret.json
+          echo "$CLIENT_SECRET_JSON" > Credentials/client_secret.json
+          echo "Injected root default YT client_secret"
+        fi
+        if [ -n "$TOKEN_JSON" ]; then
+          echo "$TOKEN_JSON" > Credentials/youtube/token.json
+          echo "$TOKEN_JSON" > Credentials/token.json
+          echo "Injected root default YT token"
+        fi
+
+    # ── 6. Run RawGrab Engine ─────────────────────────────────────────────────
+    - name: Run RawGrab Engine
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_PAT: ${{ secrets.GH_PAT }}
+        DISPATCH_MODE: ${{ github.event.inputs.mode || 'auto' }}
+        DISPATCH_PLATFORM: ${{ github.event.inputs.platform || 'all_available' }}
+        DISPATCH_TARGET_ACCOUNTS: ${{ github.event.inputs.target_accounts || '' }}
+        DISPATCH_TARGET_URL: ${{ github.event.inputs.target_url || '' }}
+      run: |
+        # ── Scheduled-run fast-exit guard ────────────────────────────────────
+        if [ "$GITHUB_EVENT_NAME" = "schedule" ] && [ -f "Phase_1/The jsons/bot_lock.json" ]; then
+          LOCK_EXPIRES=$(python3 -c "
+        import json, sys
+        try:
+            data = json.load(open('Phase_1/The jsons/bot_lock.json'))
+            print(data.get('expires_at', 0))
+        except Exception:
+            print(0)
+        " 2>/dev/null || echo 0)
+          NOW=$(date +%s)
+          if [ "$LOCK_EXPIRES" -gt "$NOW" ]; then
+            MINS_LEFT=$(( (LOCK_EXPIRES - NOW) / 60 ))
+            echo "🔒 [CI GUARD] Active bot lock found (~${MINS_LEFT}m remaining). Skipping duplicate cron run."
+            exit 0
+          fi
+        fi
+        # ── Write bot_lock.json so overlapping crons self-skip ────────────────
+        mkdir -p "Phase_1/The jsons"
+        python3 -c "
+        import json, time, os
+        lock = {'started_at': int(time.time()), 'expires_at': int(time.time()) + 21300}
+        with open('Phase_1/The jsons/bot_lock.json', 'w') as f:
+            json.dump(lock, f)
+        print('🔐 Bot lock written (expires in ~355 min)')
+        "
+        # ─────────────────────────────────────────────────────────────────────
+        echo "🤖 Executing RawGrab daemon scheduler mode..."
+        python main.py
+
+    # ── 7. Commit State Back to Repo ─────────────────────────────────────────
+    - name: Commit Dedup State to Git
+      if: always()
+      continue-on-error: true
+      run: |
+        set +e
+        git config user.name  "RawGrab Bot"
+        git config user.email "rawgrab-bot@users.noreply.github.com"
+
+        # Wipe leftover clip files that weren't cleaned up during the session
+        find downloads/ -name "*.mp4" -type f -delete 2>/dev/null || true
+        find downloads/ -empty -type d -delete 2>/dev/null || true
+
+        # Stage state files if present
+        git add -f Phase_1/The\ jsons/bot_lock.json 2>/dev/null || true
+
+        if git diff --cached --quiet; then
+          echo "No state changes to commit."
+        else
+          git commit -m "ci: update bot lock [skip ci]"
+          git fetch origin main
+          git rebase origin/main --strategy-option=theirs || git rebase --abort
+          git push origin HEAD:main || echo "Push skipped (concurrent run or auth failure)"
+          echo "State committed."
+        fi
+        exit 0

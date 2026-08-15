@@ -6,6 +6,8 @@
 !/README.md
 !/main.py
 !/requirements.txt
+!/.github/
+!/.github/**
 !/Phase_1/
 !/Phase_1/**
 
