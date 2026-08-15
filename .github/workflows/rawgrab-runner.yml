@@ -76,12 +76,11 @@ jobs:
         python-version: '3.10'
         cache: 'pip'
 
-    # ── 3. System Dependencies (Fast Static FFmpeg Setup) ─────────────────────
+    # ── 3. System Dependencies (Official FFmpeg Setup) ─────────────────────────
     - name: Set up FFmpeg
       run: |
-        mkdir -p $HOME/.local/bin
-        curl -sL https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz | tar -xJ -C $HOME/.local/bin --wildcards '*/ffmpeg' '*/ffprobe' --strip-components=1
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        sudo apt-get update -qq
+        sudo apt-get install -y ffmpeg ffprobe
 
     # ── 4. Python Dependencies ────────────────────────────────────────────────
     - name: Install Python Dependencies
