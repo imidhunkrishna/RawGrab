@@ -4,6 +4,7 @@
 # ── Allow Essential Root Files & Phase_1 ────────────────────────────────────
 !/.gitignore
 !/README.md
+!/main.py
 !/Phase_1/
 !/Phase_1/**
 
